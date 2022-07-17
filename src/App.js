@@ -1,13 +1,23 @@
 import "./App.css";
+import { useGlobalContext } from "./context/context";
 import Search from "./components/search/Search";
 import CurrentWeather from "./components/current-weather/CurrentWeather";
+import Forecast from "./components/forecast/Forecast";
+import Error from "./components/error/Error";
 
 function App() {
-  const handleonSearchChange = (searchData) => {};
+  const { error } = useGlobalContext();
   return (
-    <div className="App">
-      <Search onSearchChange={handleonSearchChange} />
-      <CurrentWeather />
+    <div className="container">
+      {error ? (
+        <Error />
+      ) : (
+        <>
+          <Search />
+          <CurrentWeather />
+          <Forecast />
+        </>
+      )}
     </div>
   );
 }

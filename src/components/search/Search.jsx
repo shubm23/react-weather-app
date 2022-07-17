@@ -1,35 +1,9 @@
-import React, { useState } from "react";
+import React,{memo} from "react";
 import { AsyncPaginate } from "react-select-async-paginate";
-import { GEO_API_URL, geoApiOptions } from "../../api";
+import { useGlobalContext } from "../../context/context";
 
-const Search = ({ onSearchChange }) => {
-  const [search, setSearch] = useState(null);
-
-  const loadOptions = (inputValue) => {
-    return fetch(
-      `${GEO_API_URL}/cities?minPopulation=1000000&namePrefix=${inputValue}`,
-      geoApiOptions
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        return {
-          options: data.data.map((city) => {
-            const { name, countryCode, latitude, longitude } = city;
-            return {
-              value: `${latitude} ${longitude}`,
-              label: `${name} , ${countryCode}`,
-            };
-          }),
-        };
-      })
-      .catch((err) => console.log(err));
-  };
-
-  const handleOnChange = (searchData) => {
-    setSearch(searchData);
-    onSearchChange(searchData);
-  };
-
+const Search = memo(() => {
+  const { search, handleOnChange, loadOptions } = useGlobalContext();
   return (
     <AsyncPaginate
       placeholder="Search for city"
@@ -39,6 +13,6 @@ const Search = ({ onSearchChange }) => {
       loadOptions={loadOptions}
     />
   );
-};
+});
 
 export default Search;

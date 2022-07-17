@@ -1,24 +1,31 @@
 import "./App.css";
 import { useGlobalContext } from "./context/context";
-import Search from "./components/search/Search";
-import CurrentWeather from "./components/current-weather/CurrentWeather";
-import Forecast from "./components/forecast/Forecast";
-import Error from "./components/error/Error";
+import { ThreeDots } from "react-loader-spinner";
+import { Search, CurrentWeather, Forecast } from "./components/index";
 
 function App() {
-  const { error } = useGlobalContext();
+  const { loading } = useGlobalContext();
+  console.log(loading);
   return (
-    <div className="container">
-      {error ? (
-        <Error />
+    <>
+      {loading ? (
+        <div className="loading">
+        <ThreeDots
+          height="650"
+          width="100"
+          color="grey"
+          ariaLabel="loading"
+          className="loading"
+        />
+        </div>
       ) : (
-        <>
+        <div className="container">
           <Search />
           <CurrentWeather />
           <Forecast />
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }
 

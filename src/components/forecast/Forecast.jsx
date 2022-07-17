@@ -10,22 +10,8 @@ import {
 } from "react-accessible-accordion";
 import "./Forecast.css";
 
-const WEEK_DAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
 const Forecast = memo(() => {
   const { forecastWeather } = useGlobalContext();
-  const dayInAWeek = new Date().getDay();
-  const forecastDays = WEEK_DAYS.slice(dayInAWeek, WEEK_DAYS.length).concat(
-    WEEK_DAYS.slice(0, dayInAWeek)
-  );
   return (
     <>
       {forecastWeather && (
@@ -45,7 +31,7 @@ const Forecast = memo(() => {
                         className="icon-small"
                         alt="weather"
                       />
-                      <label className="day">{moment(item.dt_txt).format("dddd")}</label>
+                      <label className="day">{moment(item.dt_txt).format("LLLL")}</label>
                       <label className="description">
                         {item.weather[0].description}
                       </label>

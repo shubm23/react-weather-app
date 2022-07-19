@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { GEO_API,WEATHER_API } from "../api/api";
+import { GEO_API, WEATHER_API } from "../api/api";
 
 const AppContext = React.createContext();
 
@@ -60,7 +60,7 @@ export const AppProvider = ({ children }) => {
       .catch((err) => console.log(err));
   };
 
-  const loadOptions = (inputValue="") => {
+  const loadOptions = (inputValue = "") => {
     const { GEO_API_URL, GEO_API_OPTIONS } = GEO_API;
     return fetch(
       `${GEO_API_URL}/cities?minPopulation=1000000&namePrefix=${inputValue}`,
@@ -91,11 +91,10 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    {
-      currLatLong.trim().length > 0 &&
-        handleonSearchChange({
-          value: currLatLong,
-        });
+    if (currLatLong.trim().length > 0) {
+      handleonSearchChange({
+        value: currLatLong,
+      });
     }
   }, [currLatLong]);
 

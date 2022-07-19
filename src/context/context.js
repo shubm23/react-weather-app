@@ -21,6 +21,7 @@ export const AppProvider = ({ children }) => {
       },
       (err) => {
         console.log(err);
+        setLoading(false);
       },
       {
         enableHighAccuracy: false,

@@ -10,7 +10,6 @@ const SEARCH_FETCH = "SEARCH_FETCH";
 const ERROR = "ERROR";
 
 const intialState = {
-  intial: false,
   search: null,
   loading: false,
   currentWeather: null,
@@ -20,16 +19,9 @@ const intialState = {
 const fetchReducer = (state, action) => {
   if (action.type === LOADING) {
     return { ...state, loading: true };
-  } else if (action.type === INTIAL_FETCH) {
-    return {
-      ...state,
-      intial: true,
-      loading: false,
-    };
   } else if (action.type === SEARCH_FETCH) {
     const { search, currentWeather, forecastWeather } = action.payload;
     return {
-      intial: false,
       loading: false,
       search,
       currentWeather,
@@ -48,6 +40,7 @@ const useThunkReducer = (reducer, intial) => {
   const [state, dispatch] = useReducer(reducer, intial);
   const enhancedReducer = useCallback(
     (action) => {
+      console.log(action);
       if (isFunction(action)) {
         action(dispatch);
       } else {
@@ -168,12 +161,8 @@ export const AppProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    dispatch({ type: `${INTIAL_FETCH}` });
-  }, []);
-
-  useEffect(() => {
     currentPosition();
-  }, [state.intial]);
+  }, []);
 
   return (
     <AppContext.Provider

@@ -4,7 +4,6 @@ import { isFunction } from "lodash";
 
 const AppContext = React.createContext();
 
-const INTIAL_FETCH = "INTIAL_FETCH";
 const LOADING = "LOADING";
 const SEARCH_FETCH = "SEARCH_FETCH";
 const ERROR = "ERROR";
@@ -40,7 +39,6 @@ const useThunkReducer = (reducer, intial) => {
   const [state, dispatch] = useReducer(reducer, intial);
   const enhancedReducer = useCallback(
     (action) => {
-      console.log(action);
       if (isFunction(action)) {
         action(dispatch);
       } else {
@@ -88,7 +86,7 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  const currentPosition = () => {
+  const currentPosition = useCallback(() => {
     dispatch({ type: `${LOADING}` });
     getPosition()
       .then((position) => {
@@ -113,7 +111,7 @@ export const AppProvider = ({ children }) => {
       .catch((err) => {
         dispatch({ type: `${ERROR}` });
       });
-  };
+  }, [dispatch]);
 
   const handleonSearchChange = (searchData) => {
     dispatch({ type: `${LOADING}` });
@@ -162,7 +160,7 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     currentPosition();
-  }, []);
+  }, [currentPosition]);
 
   return (
     <AppContext.Provider

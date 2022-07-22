@@ -1,63 +1,145 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useCallback, useContext, useEffect, useReducer } from "react";
 import { GEO_API, WEATHER_API } from "../api/api";
+import { isFunction } from "lodash";
 
 const AppContext = React.createContext();
 
-export const AppProvider = ({ children }) => {
-  const [search, setSearch] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [currLatLong, setcurrLatLong] = useState("");
-  const [currentWeather, setcurrentWeather] = useState(null);
-  const [forecastWeather, setforecastWeather] = useState(null);
+const INTIAL_FETCH = "INTIAL_FETCH";
+const LOADING = "LOADING";
+const SEARCH_FETCH = "SEARCH_FETCH";
+const ERROR = "ERROR";
 
-  const currentPosition = async () => {
-    setLoading(true);
-    await navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setcurrLatLong(
-          `${position.coords.latitude} ${position.coords.longitude}`
-        );
-        setLoading(false);
-      },
-      (err) => {
-        console.log(err);
-        setLoading(false);
-      },
-      {
+const intialState = {
+  intial: false,
+  search: null,
+  loading: false,
+  currentWeather: null,
+  forecastWeather: null,
+};
+
+const fetchReducer = (state, action) => {
+  if (action.type === LOADING) {
+    return { ...state, loading: true };
+  } else if (action.type === INTIAL_FETCH) {
+    return {
+      ...state,
+      intial: true,
+      loading: false,
+    };
+  } else if (action.type === SEARCH_FETCH) {
+    const { search, currentWeather, forecastWeather } = action.payload;
+    return {
+      intial: false,
+      loading: false,
+      search,
+      currentWeather,
+      forecastWeather,
+    };
+  } else if (action.type === ERROR) {
+    return {
+      ...state,
+      loading: false,
+    };
+  }
+  return state;
+};
+
+const useThunkReducer = (reducer, intial) => {
+  const [state, dispatch] = useReducer(reducer, intial);
+  const enhancedReducer = useCallback(
+    (action) => {
+      if (isFunction(action)) {
+        action(dispatch);
+      } else {
+        dispatch(action);
+      }
+    },
+    [dispatch]
+  );
+  return [state, enhancedReducer];
+};
+
+export const AppProvider = ({ children }) => {
+  const [state, dispatch] = useThunkReducer(fetchReducer, intialState);
+
+  const fetchForecastCurrent = async (lat, lon) => {
+    const { ONECALL_URL, FORECAST_URL } = WEATHER_API;
+    const currentWeather = fetch(ONECALL_URL(lat, lon));
+    const forecastWeather = fetch(FORECAST_URL(lat, lon));
+    try {
+      const res = await Promise.all([currentWeather, forecastWeather]);
+      const weatherResponse = await res[0].json();
+      const forecastResponse = await res[1].json();
+      return {
+        currentWeather: {
+          city: `${forecastResponse.city.name} , ${forecastResponse.city.country}`,
+          ...weatherResponse,
+        },
+        forecastWeather: {
+          city: `${forecastResponse.city.name} , ${forecastResponse.city.country}`,
+          ...forecastResponse,
+        },
+      };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  const getPosition = () => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: false,
         timeout: 5000,
         maximumAge: 0,
-      }
-    );
+      });
+    });
+  };
+
+  const currentPosition = () => {
+    dispatch({ type: `${LOADING}` });
+    getPosition()
+      .then((position) => {
+        fetchForecastCurrent(
+          position.coords.latitude,
+          position.coords.longitude
+        )
+          .then(({ currentWeather, forecastWeather }) => {
+            dispatch({
+              type: `${SEARCH_FETCH}`,
+              payload: {
+                search: `${position.coords.latitude} ${position.coords.longitude}`,
+                currentWeather,
+                forecastWeather,
+              },
+            });
+          })
+          .catch((err) => {
+            dispatch({ type: `${ERROR}` });
+          });
+      })
+      .catch((err) => {
+        dispatch({ type: `${ERROR}` });
+      });
   };
 
   const handleonSearchChange = (searchData) => {
-    setLoading(true);
+    dispatch({ type: `${LOADING}` });
     const [lat, lon] = searchData.value.split(" ");
-    const { ONECALL_URL, FORECAST_URL } = WEATHER_API;
-
-    const currentWeather = fetch(ONECALL_URL(lat, lon));
-    const forecastWeather = fetch(FORECAST_URL(lat, lon));
-
-    Promise.all([currentWeather, forecastWeather])
-      .then(async (res) => {
-        const weatherResponse = await res[0].json();
-        const forecastResponse = await res[1].json();
-        setcurrentWeather({
-          city: searchData.label
-            ? searchData.label
-            : `${forecastResponse.city.name} , ${forecastResponse.city.country}`,
-          ...weatherResponse,
+    fetchForecastCurrent(lat, lon)
+      .then((data) => {
+        const { currentWeather, forecastWeather } = data;
+        dispatch({
+          type: `${SEARCH_FETCH}`,
+          payload: {
+            search: searchData,
+            currentWeather,
+            forecastWeather,
+          },
         });
-        setforecastWeather({
-          city: searchData.label
-            ? searchData.label
-            : `${forecastResponse.city.name} , ${forecastResponse.city.country}`,
-          ...forecastResponse,
-        });
-        setLoading(false);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        dispatch({ type: `${ERROR}` });
+      });
   };
 
   const loadOptions = (inputValue = "") => {
@@ -82,29 +164,24 @@ export const AppProvider = ({ children }) => {
   };
 
   const handleOnChange = (searchData) => {
-    setSearch(searchData);
     handleonSearchChange(searchData);
   };
 
   useEffect(() => {
-    currentPosition();
+    dispatch({ type: `${INTIAL_FETCH}` });
   }, []);
 
   useEffect(() => {
-    if (currLatLong.trim().length > 0) {
-      handleonSearchChange({
-        value: currLatLong,
-      });
-    }
-  }, [currLatLong]);
+    currentPosition();
+  }, [state.intial]);
 
   return (
     <AppContext.Provider
       value={{
-        search,
-        loading,
-        currentWeather,
-        forecastWeather,
+        search: state.search,
+        loading: state.loading,
+        currentWeather: state.currentWeather,
+        forecastWeather: state.forecastWeather,
         loadOptions,
         handleOnChange,
       }}

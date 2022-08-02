@@ -12,10 +12,10 @@ export const GEO_API = {
 export const WEATHER_API = {
   HOST_URL: `https://api.openweathermap.org/data/2.5`,
   KEY: "c1f52cf68e21907fafad92a5126f08d5",
-  ONECALL_URL: function (lat, lon) {
-    return `${WEATHER_API.HOST_URL}/onecall?lat=${lat}&lon=${lon}&appid=${WEATHER_API.KEY}&units=metric`;
+  ONECALL_URL(lat, lon) {
+    return `${this.HOST_URL}/onecall?lat=${lat}&lon=${lon}&appid=${this.KEY}&units=metric`;
   },
-  FORECAST_URL: function (lat, lon) {
-    return `${WEATHER_API.HOST_URL}/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API.KEY}&units=metric`;
+  FORECAST_URL(lat, lon) {
+    return `${this.HOST_URL}/forecast?lat=${lat}&lon=${lon}&appid=${this.KEY}&units=metric`;
   },
 };
